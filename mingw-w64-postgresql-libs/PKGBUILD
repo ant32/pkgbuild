@@ -1,46 +1,74 @@
 # Maintainer: Philip A Reimer <antreimer@gmail.com>
-
-pkgname=mingw32-postgresql-libs
+# Contributor: Schala Zeal <schalaalexiazeal@gmail.com>
+pkgname=mingw-w64-postgresql-libs
 pkgver=9.2.4
-pkgrel=1
-pkgdesc="Libraries for use with PostgreSQL (mingw32)"
+pkgrel=2
+pkgdesc="Libraries for use with PostgreSQL (mingw-w64)"
 arch=('any')
 url="http://www.postgresql.org/"
 license=('custom:PostgreSQL')
-depends=('mingw32-runtime')
-#depends=('krb5' 'openssl>=1.0.0' 'readline>=6.0')
-makedepends=('mingw32-gcc')
+# I don't think it depends on readline since it says while configureing that postgresql doesn't work with readline in mingw32
+depends=('mingw-w64-crt' 'mingw-w64-openssl' 'mingw-w64-libxml2')
+makedepends=('mingw-w64-gcc')
 source=(http://ftp.postgresql.org/pub/source/v${pkgver}/postgresql-${pkgver}.tar.bz2)
-options=('!strip' '!buildflags')
+options=(!libtool !strip !buildflags)
 md5sums=('6ee5bb53b97da7c6ad9cb0825d3300dd')
 
+_architectures="i686-w64-mingw32 x86_64-w64-mingw32"
+
 build() {
-  cd "${srcdir}/postgresql-${pkgver}"
-  ./configure --host=i486-mingw32 --prefix=/usr/i486-mingw32
+  unset LDFLAGS
+  
+  for _arch in ${_architectures}; do
+    mkdir -p "${srcdir}/build-${_arch}"
+    cp -r "$srcdir/postgresql-$pkgver/"* "${srcdir}/build-${_arch}"
+    cd "${srcdir}/build-${_arch}"
+    ./configure \
+	    --host=${_arch} \
+	    --prefix=/usr/${_arch} \
+	    --enable-nls \
+	    --with-openssl \
+	    --with-libxml
+#	    --build=$CHOST \
+#	    --disable-rpath \
+    for dir in src/interfaces src/bin/pg_config src/bin/psql; do
+      make -C ${dir}
+    done
+  done
 }
 
 package() {
-  cd "${srcdir}/postgresql-${pkgver}"
+  for _arch in ${_architectures}; do
+  
+    cd "${srcdir}/build-${_arch}"
+    mkdir -p ${pkgdir}/usr/${_arch}/{bin,include,lib}
 
-  # install libs
-  for dir in src/interfaces src/bin/pg_config src/bin/psql; do
-    make -C ${dir} DESTDIR="${pkgdir}" install
+    # install libs
+    for dir in src/interfaces src/bin/pg_config src/bin/psql; do
+      make -C ${dir} DESTDIR="${pkgdir}" install
+    done
+    mv "$pkgdir/usr/${_arch}/lib/"*.dll "$pkgdir/usr/${_arch}/bin/"
+    find "$pkgdir/usr/${_arch}" -name '*.exe' -o -name '*.bat' -o -name '*.def' -o -name '*.exp' | xargs -rtl1 rm
+    find "$pkgdir/usr/${_arch}" -name '*.dll' | xargs -rtl1 ${_arch}-strip -x
+    find "$pkgdir/usr/${_arch}" -name '*.a' -o -name '*.dll' | xargs -rtl1 ${_arch}-strip -g
+    rm -r "$pkgdir/usr/${_arch}/share"
+    
+    cd src/include
+    
+    mkdir -p "${pkgdir}"/usr/${_arch}/include/{libpq,postgresql/internal/libpq}
+    
+    # these headers are needed by the public headers of the interfaces
+    install -m644 pg_config.h "${pkgdir}/usr/${_arch}/include/"
+    install -m644 pg_config_os.h "${pkgdir}/usr/${_arch}/include/"
+    install -m644 postgres_ext.h "${pkgdir}/usr/${_arch}/include/"
+    install -m644 libpq/libpq-fs.h "${pkgdir}/usr/${_arch}/include/libpq/"
+    install -m644 pg_config_manual.h "${pkgdir}/usr/${_arch}/include/"
+    
+    # these headers are needed by the not-so-public headers of the interfaces
+    install -m644 c.h "${pkgdir}/usr/${_arch}/include/postgresql/internal/"
+    install -m644 port.h "${pkgdir}/usr/${_arch}/include/postgresql/internal/"
+    install -m644 postgres_fe.h "${pkgdir}/usr/${_arch}/include/postgresql/internal/"
+    install -m644 libpq/pqcomm.h "${pkgdir}/usr/${_arch}/include/postgresql/internal/libpq/"
+    
   done
-
-  cd src/include
-
-  mkdir -p "${pkgdir}"/usr/i486-mingw32/include/{libpq,postgresql/internal/libpq}
-
-  # these headers are needed by the public headers of the interfaces
-  install -m644 pg_config.h "${pkgdir}/usr/i486-mingw32/include/"
-  install -m644 pg_config_os.h "${pkgdir}/usr/i486-mingw32/include/"
-  install -m644 postgres_ext.h "${pkgdir}/usr/i486-mingw32/include/"
-  install -m644 libpq/libpq-fs.h "${pkgdir}/usr/i486-mingw32/include/libpq/"
-  install -m644 pg_config_manual.h "${pkgdir}/usr/i486-mingw32/include/"
-
-  # these headers are needed by the not-so-public headers of the interfaces
-  install -m644 c.h "${pkgdir}/usr/i486-mingw32/include/postgresql/internal/"
-  install -m644 port.h "${pkgdir}/usr/i486-mingw32/include/postgresql/internal/"
-  install -m644 postgres_fe.h "${pkgdir}/usr/i486-mingw32/include/postgresql/internal/"
-  install -m644 libpq/pqcomm.h "${pkgdir}/usr/i486-mingw32/include/postgresql/internal/libpq/"
 }
