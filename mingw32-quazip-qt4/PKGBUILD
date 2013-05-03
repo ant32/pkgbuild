@@ -2,7 +2,7 @@
 
 pkgname=mingw32-quazip-qt4
 pkgver=0.5.1
-pkgrel=1
+pkgrel=2
 pkgdesc="C++ wrapper for the Gilles Vollant's ZIP/UNZIP C package (mingw32)"
 url="http://sourceforge.net/projects/quazip/"
 arch=('any')
