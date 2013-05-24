@@ -1,0 +1,35 @@
+pkgname=mingw32-openssl
+pkgver=1.0.1c
+pkgrel=1
+arch=('any')
+pkgdesc="The Open Source toolkit for Secure Sockets Layer and Transport Layer Security (mingw32)"
+depends=('mingw32-runtime' 'mingw32-zlib')
+options=(!strip !buildflags)
+license=('BSD')
+url="http://www.openssl.org"
+source=("http://openssl.org/source/openssl-$pkgver.tar.gz")
+md5sums=('ae412727c8c15b67880aef7bd2999b2e')
+
+build()
+{
+  cd "$srcdir/openssl-$pkgver"
+  unset LDFLAGS
+  ./Configure \
+    --cross-compile-prefix=i486-mingw32- \
+    -DOPENSSL_NO_CAPIENG \
+    --prefix=/usr/i486-mingw32 \
+    mingw \
+    shared \
+    zlib-dynamic
+  make
+}
+
+package() {
+  cd "$srcdir/openssl-$pkgver"
+  make INSTALL_PREFIX=$pkgdir install
+  i486-mingw32-strip $pkgdir/usr/i486-mingw32/bin/*.exe
+  i486-mingw32-strip -x -g $pkgdir/usr/i486-mingw32/bin/*.dll
+  i486-mingw32-strip -g $pkgdir/usr/i486-mingw32/lib/*.a
+  i486-mingw32-strip -x -g $pkgdir/usr/i486-mingw32/lib/engines/*.dll
+  rm -rf $pkgdir/usr/i486-mingw32/{bin/c_rehash,ssl/misc,ssl/man}
+}
