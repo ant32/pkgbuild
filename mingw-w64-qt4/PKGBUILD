@@ -1,0 +1,513 @@
+# Maintainer: Filip Brcic <brcha@gna.org>
+
+pkgname=mingw-w64-qt
+pkgver=4.8.4
+pkgrel=2
+pkgdesc='A cross-platform application and UI framework (mingw-w64)'
+arch=('i686' 'x86_64')
+url="http://qt-project.org/"
+license=('GPL3' 'LGPL')
+depends=(
+  'mingw-w64-crt'
+  'mingw-w64-zlib'
+  'mingw-w64-libjpeg-turbo'
+  'mingw-w64-win-iconv'
+  'mingw-w64-libtiff'
+  'mingw-w64-sqlite3'
+  'mingw-w64-libpng'
+  'mingw-w64-openssl'
+  'mingw-w64-dbus'
+  'mingw-w64-pkg-config'
+)
+makedepends=('mingw-w64-gcc')
+options=(!strip !buildflags !libtool)
+_pkgfqn="qt-everywhere-opensource-src-${pkgver}"
+source=("http://releases.qt-project.org/qt4/source/${_pkgfqn}.tar.gz"
+        'qmake.conf.win32'
+	'qmake.conf.win64'
+	'qplatformdefs.h'
+	'qt-merge-static-and-shared-library-trees.patch'
+	'mingw32-qt-4.8.0-no-webkit-tests.patch'
+	'qt-dbus-dont-link-to-dbus-1d.patch'
+	'qt-dont-perform-ipc-checks-for-win32.patch'
+	'qt-4.8.0-fix-include-windows-h.patch'
+	'qt-4.8.0-build-qtuitools-dynamically.patch'
+	'qt-fix-javascript-jit-on-mingw-x86_64.patch'
+	'qt-4.8.1-fix-activeqt-compilation.patch'
+        'qt-4.8.4-fix-sse-suppport-build-regression.patch'
+        '0054-Fix-binary-incompatibility-between-openssl-versions.patch'
+  )
+md5sums=('89c5ecba180cae74c66260ac732dc5cb'
+         '3759f73b9c872ce692b7067daef134a9'
+         'db6257762e051f2b7b18745dca2df43d'
+         '2cba45b6c52c20aa51265d61c1dd9856'
+         'e475528791dc16a46a9d9b64e49461e5'
+         '91d01b6d31887f78c7933c04544c5758'
+         '878ff1ea1ae368647c75cdaa7444ae86'
+         '26a74c4786e0b18c81eec251fd26375f'
+         '63dc5a13265ed82b2ba3abd0aa7a59f7'
+         '7f8e12ad3b140e773c7a1f76cdd800f2'
+         '3fe6e419c1f21c59062db1f562c1f9bf'
+         '22fc6f20aa6af060c640fc3b9af888a9'
+         '79fcab87ac6f4c56469578ca4306cee3'
+         'abd18c8a71e08167270b8ec6de61254a')
+
+platform_win32='win32-g++-cross'
+platform_win64='win32-g++-cross-x64'
+
+# Helper functions for the split builds
+isRelease() {
+  [ $pkgname = "mingw-w64-qt" ]
+}
+isDebug() {
+  [ $pkgname = "mingw-w64-qt-debug" ]
+}
+isStatic() {
+  [ $pkgname = "mingw-w64-qt-static" ]
+}
+isShared() {
+  ! isStatic
+}
+
+isDebug && depends=($depends "mingw-w64-qt")
+isStatic && depends=($depends "mingw-w64-qt")
+
+build() {
+  cd "${srcdir}/${_pkgfqn}"
+
+  # Disable WebKit tests that are failing (as of Qt 4.8.0 rc1) with
+  # out of source builds.
+  patch -Np1 -i ${srcdir}/mingw32-qt-4.8.0-no-webkit-tests.patch
+
+  # The debug build tries to link against libdbus-1d which doesn't exist.
+  patch -Np0 -i ${srcdir}/qt-dbus-dont-link-to-dbus-1d.patch
+
+  # The configure script thinks that there is no IPC/shared memory support
+  # for this platform, while there is support. Fix the configure script
+  patch -Np0 -i ${srcdir}/qt-dont-perform-ipc-checks-for-win32.patch
+
+  # Fix compilation of the designer tool
+  patch -Np1 -i ${srcdir}/qt-4.8.0-fix-include-windows-h.patch
+
+  # Make sure the QtUiTools are built as a shared library
+  # https://bugreports.qt.nokia.com/browse/QTBUG-20498
+  patch -Np1 -i ${srcdir}/qt-4.8.0-build-qtuitools-dynamically.patch
+
+  # Javascript-JIT fails to link on mingw x86_64
+  patch -Np1 -i ${srcdir}/qt-fix-javascript-jit-on-mingw-x86_64.patch
+
+  # As of qt 4.8.1 the qt build system tries to build a activeqt module for
+  # the designer component. However, this fails to compile:
+  # In file included from ../../../../../include/ActiveQt/qaxselect.h:1:0,
+  #                 from /home/erik/fedora/mingw-qt/qt-everywhere-opensource-src-4.8.1/tools/designer/src/plugins/activeqt/qaxwidgettaskmenu.cpp:55:
+  # ../../../../../include/ActiveQt/../../../qt-everywhere-opensource-src-4.8.1/src/activeqt/container/qaxselect.h:47:26: fatal error: ui_qaxselect.h: No such file or directory
+  # Workaround this for now until a proper fix has been found
+  patch -Np1 -i ${srcdir}/qt-4.8.1-fix-activeqt-compilation.patch
+
+  # Fix build regression regarding SSSE3 support
+  # https://codereview.qt-project.org/42316
+  patch -Np0 -i ${srcdir}/qt-4.8.4-fix-sse-suppport-build-regression.patch
+
+  # QSslSocket may report incorrect errors when certificate verification fails
+  # https://codereview.qt-project.org/#change,42461
+  patch -Np1 -i ${srcdir}/0054-Fix-binary-incompatibility-between-openssl-versions.patch
+
+  # Cross-compilation qmake target.
+  mkdir mkspecs/${platform_win32}
+  mkdir mkspecs/${platform_win64}
+  install -m644 ${srcdir}/qmake.conf.win32 mkspecs/${platform_win32}/qmake.conf
+  install -m644 ${srcdir}/qmake.conf.win64 mkspecs/${platform_win64}/qmake.conf
+  install -m644 ${srcdir}/qplatformdefs.h mkspecs/${platform_win32}/
+  install -m644 ${srcdir}/qplatformdefs.h mkspecs/${platform_win64}/
+
+  # Setup flags
+  export CFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4"
+  export CXXFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4"
+  unset LDFLAGS
+
+  # Now we build
+
+  # Generic configure arguments
+  # Phonon is disabled for now because we lack the directx headers
+  qt_configure_args_generic="\
+    -qt3support \
+    -optimized-qmake \
+    -verbose \
+    -opensource \
+    -exceptions \
+    -fast \
+    -confirm-license \
+    -force-pkg-config \
+    -little-endian \
+    -xmlpatterns \
+    -multimedia \
+    -audio-backend \
+    -webkit \
+    -script \
+    -scripttools \
+    -declarative \
+    -no-phonon \
+    -javascript-jit \
+    -qt-libmng \
+    -system-zlib \
+    -system-libtiff \
+    -system-libpng \
+    -system-libjpeg \
+    -system-sqlite \
+    -iconv \
+    -openssl \
+    -dbus-linked \
+    -make libs \
+    -make tools \
+    -nomake demos \
+    -nomake docs \
+    -nomake examples"
+
+  qt_configure_args_win32="\
+    -prefix /usr/i686-w64-mingw32 \
+    -bindir /usr/i686-w64-mingw32/bin \
+    -datadir /usr/i686-w64-mingw32/share/qt4 \
+    -demosdir /usr/i686-w64-mingw32/share/qt4/demos \
+    -docdir /usr/i686-w64-mingw32/share/doc/qt4 \
+    -examplesdir /usr/i686-w64-mingw32/share/qt4/examples \
+    -headerdir /usr/i686-w64-mingw32/include \
+    -libdir /usr/i686-w64-mingw32/lib \
+    -plugindir /usr/i686-w64-mingw32/lib/qt4/plugins \
+    -sysconfdir /usr/i686-w64-mingw32/etc \
+    -translationdir /usr/i686-w64-mingw32/share/qt4/translations \
+    -xplatform ${platform_win32}"
+
+  qt_configure_args_win64="\
+    -prefix /usr/x86_64-w64-mingw32 \
+    -bindir /usr/x86_64-w64-mingw32/bin \
+    -datadir /usr/x86_64-w64-mingw32/share/qt4 \
+    -demosdir /usr/x86_64-w64-mingw32/share/qt4/demos \
+    -docdir /usr/x86_64-w64-mingw32/share/doc/qt4 \
+    -examplesdir /usr/x86_64-w64-mingw32/share/qt4/examples \
+    -headerdir /usr/x86_64-w64-mingw32/include \
+    -libdir /usr/x86_64-w64-mingw32/lib \
+    -plugindir /usr/x86_64-w64-mingw32/lib/qt4/plugins \
+    -sysconfdir /usr/x86_64-w64-mingw32/etc \
+    -translationdir /usr/x86_64-w64-mingw32/share/qt4/translations \
+    -xplatform ${platform_win64}"
+
+  unset PKG_CONFIG_PATH
+
+  ###############################################################################
+  # Win32
+  #
+  # We have to build Qt three times, once for the static release build, once
+  # for the shared release build and once for the shared debug build
+  #
+  # Unfortunately Qt only supports out-of-source builds which are in ../some_folder
+  if isStatic
+  then
+    rm -rf ../build_release_static_win32
+    mkdir ../build_release_static_win32
+    pushd ../build_release_static_win32
+    ../${_pkgfqn}/configure \
+      -release \
+      -static \
+      $qt_configure_args_generic $qt_configure_args_win32
+    make
+    popd
+  fi
+
+  if isDebug
+  then
+    rm -rf ../build_debug_win32
+    mkdir ../build_debug_win32
+    pushd ../build_debug_win32
+    ../${_pkgfqn}/configure \
+      -debug \
+      -shared \
+      $qt_configure_args_generic $qt_configure_args_win32
+    make
+    popd
+  fi
+
+  if isRelease
+  then
+    rm -rf ../build_release_win32
+    mkdir ../build_release_win32
+    pushd ../build_release_win32
+    ../${_pkgfqn}/configure \
+      -release \
+      -shared \
+      $qt_configure_args_generic $qt_configure_args_win32
+    make
+    popd
+  fi
+
+  ###############################################################################
+  # Win64
+  #
+  # We have to build Qt three times, once for the static release build, once
+  # for the shared release build and once for the shared debug build
+  #
+  # Unfortunately Qt only supports out-of-source builds which are in ../some_folder
+  if isStatic
+  then
+    rm -rf ../build_release_static_win64
+    mkdir ../build_release_static_win64
+    pushd ../build_release_static_win64
+    ../${_pkgfqn}/configure \
+      -release \
+      -static \
+      $qt_configure_args_generic $qt_configure_args_win64
+    make
+    popd
+  fi
+
+  if isDebug
+  then
+    rm -rf ../build_debug_win64
+    mkdir ../build_debug_win64
+    pushd ../build_debug_win64
+    ../${_pkgfqn}/configure \
+      -debug \
+      -shared \
+      $qt_configure_args_generic $qt_configure_args_win64
+    make
+    popd
+  fi
+
+  if isRelease
+  then
+    rm -rf ../build_release_win64
+    mkdir ../build_release_win64
+    pushd ../build_release_win64
+    ../${_pkgfqn}/configure \
+      -release \
+      -shared \
+      $qt_configure_args_generic $qt_configure_args_win64
+    make
+    popd
+  fi
+}
+
+package() {
+  cd $srcdir/${_pkgfqn}
+  if isDebug
+  then
+    make install -C ../build_debug_win32 INSTALL_ROOT=${pkgdir}
+    make install -C ../build_debug_win64 INSTALL_ROOT=${pkgdir}
+  fi
+  if isRelease
+  then
+    make install -C ../build_release_win32 INSTALL_ROOT=${pkgdir}
+    make install -C ../build_release_win64 INSTALL_ROOT=${pkgdir}
+  fi
+
+  if isStatic
+  then
+    # Install the static libraries in a temporary prefix so we can merge everything together properly
+    mkdir ${pkgdir}/static
+    make install -C ../build_release_static_win32 INSTALL_ROOT=${pkgdir}/static
+    make install -C ../build_release_static_win64 INSTALL_ROOT=${pkgdir}/static
+  
+    # Drop the qtmain static library from the static tree as
+    # it's already part of the main tree
+    rm -f ${pkgdir}/static/usr/*-w64-mingw32/lib/libqtmain*
+
+    # Give the real static libraries the correct filename to avoid future conflicts with Qt5
+    for FN in ${pkgdir}/static/usr/i686-w64-mingw32/lib/*.a ${pkgdir}/static/usr/x86_64-w64-mingw32/lib/*.a ; do
+      FN_NEW=$(echo $FN | sed s/'.a$'/'4.a'/)
+      mv $FN $FN_NEW
+    done
+
+  else # not static => shared debug or release
+
+    # Remove the ActiveQt pieces from the shared build as they aren't build as shared library so
+    # it's good enough to only bundle the static libraries originating from the static build
+    rm -f ${pkgdir}/usr/i686-w64-mingw32/lib/libQAx* ${pkgdir}/usr/x86_64-w64-mingw32/lib/libQAx*
+
+    # Rename the .a files to .dll.a as they're actually import libraries and not static libraries
+    for FN in ${pkgdir}/usr/i686-w64-mingw32/lib/*.a ${pkgdir}/usr/x86_64-w64-mingw32/lib/*.a ; do
+      # Ignore libqtmain*.a
+      echo $FN | grep -q qtmain && continue
+
+      # Rename the file
+      FN_NEW=$(echo $FN | sed s/'.a$'/'.dll.a'/)
+      mv $FN $FN_NEW
+    done
+
+  fi
+
+  if isRelease
+  then
+    # Apply a patch which incorporates all the differences between
+    # the static and the shared library build while staying compatible
+    pushd ${pkgdir}
+    patch -Np0 -i ${srcdir}/qt-merge-static-and-shared-library-trees.patch
+    popd
+  fi
+
+  if isStatic
+  then
+    # Move the static libraries from the static tree to the main tree
+    mv ${pkgdir}/static/usr/i686-w64-mingw32/lib/*.a ${pkgdir}/usr/i686-w64-mingw32/lib/
+    mv ${pkgdir}/static/usr/x86_64-w64-mingw32/lib/*.a ${pkgdir}/usr/x86_64-w64-mingw32/lib/
+
+    # Clean up the static trees as we've now merged all interesting pieces
+    rm -rf ${pkgdir}/static
+  fi
+
+  if isRelease
+  then
+    # Also install the lrelease tool
+    make -C ../build_release_win32/tools/linguist/lrelease install INSTALL_ROOT=${pkgdir}
+    make -C ../build_release_win64/tools/linguist/lrelease install INSTALL_ROOT=${pkgdir}
+
+    # move QtUiTools4.dll from lib/ to bin/
+    mv ${pkgdir}/usr/i686-w64-mingw32/lib/QtUiTools4.dll ${pkgdir}/usr/i686-w64-mingw32/bin/
+    mv ${pkgdir}/usr/x86_64-w64-mingw32/lib/QtUiTools4.dll ${pkgdir}/usr/x86_64-w64-mingw32/bin/
+  fi
+
+
+  if isDebug
+  then
+    # Drop the debug version of the tool qmlplugindumpd.exe
+    rm -f ${pkgdir}/usr/i686-w64-mingw32/bin/qmlplugindumpd.exe
+    rm -f ${pkgdir}/usr/x86_64-w64-mingw32/bin/qmlplugindumpd.exe
+  fi
+
+  if isShared
+  then
+    # The .dll's are installed in both bindir and libdir
+    # One copy of the .dll's is sufficient
+    rm -f ${pkgdir}/usr/i686-w64-mingw32/lib/*.dll
+    rm -f ${pkgdir}/usr/x86_64-w64-mingw32/lib/*.dll
+  fi
+
+  # add links with version suffix for convenience
+  if isRelease
+  then
+    ln -s libqtmain.a ${pkgdir}/usr/i686-w64-mingw32/lib/libqtmain4.a
+    ln -s libqtmain.a ${pkgdir}/usr/x86_64-w64-mingw32/lib/libqtmain4.a
+  fi
+  if isDebug
+  then
+    ln -s libqtmaind.a ${pkgdir}/usr/i686-w64-mingw32/lib/libqtmaind4.a
+    ln -s libqtmaind.a ${pkgdir}/usr/x86_64-w64-mingw32/lib/libqtmaind4.a
+  fi
+
+  if isShared
+  then
+    # Drop all the files which we don't need
+    rm -f  ${pkgdir}/usr/i686-w64-mingw32/lib/*.prl
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/demos
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/examples
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/q3porting.xml
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/phrasebooks/
+
+    rm -f  ${pkgdir}/usr/x86_64-w64-mingw32/lib/*.prl
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/demos
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/examples
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/q3porting.xml
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/phrasebooks/
+  fi
+
+  if isShared
+  then
+    # Move imports to lib/qt4, just like the plugins
+    mv ${pkgdir}/usr/i686-w64-mingw32/imports ${pkgdir}/usr/i686-w64-mingw32/lib/qt4/
+    mv ${pkgdir}/usr/x86_64-w64-mingw32/imports ${pkgdir}/usr/x86_64-w64-mingw32/lib/qt4/
+  fi
+
+  if isRelease
+  then
+    # Manually install qmake and other native tools so we don't depend anymore on
+    # the version of the native system Qt and also fix issues as illustrated at
+    # http://stackoverflow.com/questions/6592931/building-for-windows-under-linux-using-qt-creator
+    #
+    # Also make sure the tools can be found by CMake
+    mkdir -p ${pkgdir}/usr/bin
+    mkdir -p ${pkgdir}/usr/i686-w64-mingw32/bin
+    mkdir -p ${pkgdir}/usr/x86_64-w64-mingw32/bin
+
+    install -m0755 ../build_release_win32/bin/qmake ${pkgdir}/usr/i686-w64-mingw32/bin
+    ln -s ../i686-w64-mingw32/bin/qmake ${pkgdir}/usr/bin/i686-w64-mingw32-qmake
+    ln -s i686-w64-mingw32-qmake ${pkgdir}/usr/bin/mingw32-qmake
+
+    for tool in lrelease moc rcc uic ; do
+      ln -s ../i686-w64-mingw32/bin/$tool ${pkgdir}/usr/bin/i686-w64-mingw32-$tool
+    done
+
+    install -m0755 ../build_release_win64/bin/qmake ${pkgdir}/usr/x86_64-w64-mingw32/bin
+    ln -s ../x86_64-w64-mingw32/bin/qmake ${pkgdir}/usr/bin/x86_64-w64-mingw32-qmake
+    ln -s x86_64-w64-mingw32-qmake ${pkgdir}/usr/bin/mingw64-qmake
+
+    for tool in lrelease moc rcc uic ; do
+      ln -s ../x86_64-w64-mingw32/bin/$tool ${pkgdir}/usr/bin/x86_64-w64-mingw32-$tool
+    done
+
+    # An argument in the mkspecs profile needs to be un-commented in order to be
+    # useful for developers who wish to use the Qt libraries
+    sed -i s@'#QT_LIBINFIX'@'QT_LIBINFIX'@ ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win32}/qmake.conf
+    sed -i s@'#QT_LIBINFIX'@'QT_LIBINFIX'@ ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win64}/qmake.conf
+    sed -i s@'#QT_LIBINFIX'@'QT_LIBINFIX'@ ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win32}/qmake.conf
+    sed -i s@'#QT_LIBINFIX'@'QT_LIBINFIX'@ ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win64}/qmake.conf
+
+    # Remove some duplicate mkspecs data
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win32}/default
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win32}/${platform_win32}
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win64}/default
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/${platform_win64}/${platform_win64}
+
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win32}/default
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win32}/${platform_win32}
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win64}/default
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/${platform_win64}/${platform_win64}
+
+    # Workaround a bug where building against the debug binaries will always fail:
+    # https://bugreports.qt.nokia.com/browse/QTBUG-14467
+    sed -i s@'$${QT_LIBINFIX}d'@'d$${QT_LIBINFIX}'@ ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/features/win32/windows.prf
+    sed -i s@'$${QT_LIBINFIX}d'@'d$${QT_LIBINFIX}'@ ${pkgdir}/usr/i686-w64-mingw32/share/qt4/mkspecs/features/qt_functions.prf
+
+    sed -i s@'$${QT_LIBINFIX}d'@'d$${QT_LIBINFIX}'@ ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/features/win32/windows.prf
+    sed -i s@'$${QT_LIBINFIX}d'@'d$${QT_LIBINFIX}'@ ${pkgdir}/usr/x86_64-w64-mingw32/share/qt4/mkspecs/features/qt_functions.prf
+  fi
+
+  # Remove debug binaries, includes, data, ...
+  if isDebug
+  then
+    rm -rf ${pkgdir}/usr/i686-w64-mingw32/{bin/*.exe,include,share,lib/qt4/imports/{Qt/labs/*/qmldir,QtWebKit/qmldir}}
+    rm -rf ${pkgdir}/usr/x86_64-w64-mingw32/{bin/*.exe,include,share,lib/qt4/imports/{Qt/labs/*/qmldir,QtWebKit/qmldir}}
+
+    # tools are installed in the release build
+    rm -f ${pkgdir}/usr/*-w64-mingw32/bin/{lrelease,moc,qmake,rcc,uic}
+
+    # qaxwidget plugin is named the same in debug and release versions, so remove it
+    rm -f ${pkgdir}/usr/*-w64-mingw32/lib/qt4/plugins/designer/qaxwidget.dll
+  fi
+
+  # And finaly, strip the binaries
+  if isShared
+  then
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/bin/*.dll
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/bin/*.dll
+  fi
+  if isRelease
+  then
+    i686-w64-mingw32-strip --strip-all ${pkgdir}/usr/i686-w64-mingw32/bin/*.exe
+    x86_64-w64-mingw32-strip --strip-all ${pkgdir}/usr/x86_64-w64-mingw32/bin/*.exe
+  fi
+
+  if isStatic
+  then
+    i686-w64-mingw32-strip --strip-debug ${pkgdir}/usr/i686-w64-mingw32/lib/*4.a # static libs
+    x86_64-w64-mingw32-strip --strip-debug ${pkgdir}/usr/x86_64-w64-mingw32/lib/*4.a # static libs
+  else
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/lib/libqtmain*.a
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/lib/*4.dll.a # dynamic lib interfaces
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/lib/qt4/plugins/*/*.dll
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/lib/qt4/imports/Qt/labs/*/*.dll
+    i686-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/i686-w64-mingw32/lib/qt4/imports/QtWebKit/*.dll
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/lib/libqtmain*.a
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/lib/*4.dll.a # dynamic lib interfaces
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/lib/qt4/plugins/*/*.dll
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/lib/qt4/imports/Qt/labs/*/*.dll
+    x86_64-w64-mingw32-strip --strip-unneeded ${pkgdir}/usr/x86_64-w64-mingw32/lib/qt4/imports/QtWebKit/*.dll
+  fi
+}
