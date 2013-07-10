@@ -100,15 +100,15 @@
  CONFIG +=  cross_compile def_files_disabled exceptions rtti no_mocdepend release stl qt_no_framework
  QT_ARCH = windows
  QT_EDITION = OpenSource
--QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
+-QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl shared ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +contains(CONFIG, static) {
-+   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg jpeg mng system-png png gif system-tiff tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
++   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl static ipv6 getaddrinfo system-jpeg jpeg mng system-png png gif system-tiff tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +} else {
-+   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
++   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl shared ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +}
  
  #versioning
- QT_VERSION = 4.8.4
+ QT_VERSION = 4.8.5
 --- usr/i686-w64-mingw32/share/qt4/mkspecs/features/win32/default_post.prf.orig	2011-12-26 02:29:56.365208473 +0100
 +++ usr/i686-w64-mingw32/share/qt4/mkspecs/features/win32/default_post.prf	2011-12-26 02:31:03.650208601 +0100
 @@ -6,6 +6,10 @@
@@ -130,7 +130,7 @@
      isEmpty(LINKAGE) {
 -       if(!debug_and_release|build_pass):CONFIG(debug, debug|release) {
 +       if(!debug_and_release|build_pass):!static:CONFIG(debug, debug|release) {
-            win32:LINKAGE = -l$${LIB_NAME}$${QT_LIBINFIX}d
+            win32:LINKAGE = -l$${LIB_NAME}d$${QT_LIBINFIX}
             mac:LINKAGE = -l$${LIB_NAME}$${QT_LIBINFIX}_debug
         }
 @@ -83,6 +83,17 @@
@@ -253,15 +253,15 @@
  CONFIG +=  cross_compile def_files_disabled exceptions rtti no_mocdepend release stl qt_no_framework
  QT_ARCH = windows
  QT_EDITION = OpenSource
--QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
+-QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl shared ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +contains(CONFIG, static) {
-+   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg jpeg mng system-png png gif system-tiff tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
++   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl static ipv6 getaddrinfo system-jpeg jpeg mng system-png png gif system-tiff tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +} else {
-+   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib gnu-libiconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
++   QT_CONFIG +=  minimal-config small-config medium-config large-config full-config qt3support accessibility opengl shared ipv6 getaddrinfo system-jpeg system-png png system-tiff no-freetype system-zlib iconv dbus dbus-linked openssl concurrent xmlpatterns multimedia audio-backend svg script scripttools declarative release
 +}
  
  #versioning
- QT_VERSION = 4.8.3
+ QT_VERSION = 4.8.5
 --- usr/x86_64-w64-mingw32/share/qt4/mkspecs/features/win32/default_post.prf.orig	2011-12-26 02:29:56.365208473 +0100
 +++ usr/x86_64-w64-mingw32/share/qt4/mkspecs/features/win32/default_post.prf	2011-12-26 02:31:03.650208601 +0100
 @@ -6,6 +6,10 @@
@@ -283,7 +283,7 @@
      isEmpty(LINKAGE) {
 -       if(!debug_and_release|build_pass):CONFIG(debug, debug|release) {
 +       if(!debug_and_release|build_pass):!static:CONFIG(debug, debug|release) {
-            win32:LINKAGE = -l$${LIB_NAME}$${QT_LIBINFIX}d
+            win32:LINKAGE = -l$${LIB_NAME}d$${QT_LIBINFIX}
             mac:LINKAGE = -l$${LIB_NAME}$${QT_LIBINFIX}_debug
         }
 @@ -83,6 +83,17 @@
