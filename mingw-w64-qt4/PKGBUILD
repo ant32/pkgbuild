@@ -183,7 +183,6 @@ build() {
     if isStatic; then
       mkdir -p ../${_arch}-static
       pushd ../${_arch}-static
-      export LD_LIBRARY_PATH=$PWD/lib:${LD_LIBRARY_PATH}
       ../${_pkgfqn}/configure \
         -release \
         -static \
@@ -195,7 +194,6 @@ build() {
     if isDebug; then
       mkdir -p ../${_arch}-debug
       pushd ../${_arch}-debug
-      export LD_LIBRARY_PATH=$PWD/lib:${LD_LIBRARY_PATH}
       ../${_pkgfqn}/configure \
         -debug \
         -shared \
@@ -207,7 +205,6 @@ build() {
     if isRelease; then
       mkdir -p ../${_arch}-release
       pushd ../${_arch}-release
-      export LD_LIBRARY_PATH=$PWD/lib:${LD_LIBRARY_PATH}
       ../${_pkgfqn}/configure \
         -release \
         -shared \
