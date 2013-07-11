@@ -291,6 +291,7 @@ package() {
       done
 
       # Move the static libraries from the static tree to the main tree
+      mkdir -p ${pkgdir}/usr/${_arch}/lib
       mv ${pkgdir}/static/usr/${_arch}/lib/*.a ${pkgdir}/usr/${_arch}/lib/
 
       # Clean up the static trees as we've now merged all interesting pieces
