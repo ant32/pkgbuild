@@ -115,6 +115,10 @@ prepare() {
   install -m644 ${srcdir}/qmake.conf.win64 mkspecs/win32-g++-cross-x64/qmake.conf
   install -m644 ${srcdir}/qplatformdefs.h mkspecs/win32-g++-cross/
   install -m644 ${srcdir}/qplatformdefs.h mkspecs/win32-g++-cross-x64/
+  
+  # fix mysql plugin
+  sed -e 's|lmysqlclient_r|lmysql|g' -i ${srcdir}/${_pkgfqn}/config.tests/unix/mysql_r/mysql_r.pro
+  sed -e 's|lmysqlclient|lmysql|g' -i ${srcdir}/${_pkgfqn}/config.tests/unix/mysql/mysql.pro
 }
 
 build() {
@@ -168,6 +172,8 @@ build() {
       -nomake docs \
       -nomake examples \
       -prefix /usr/${_arch} \
+      -plugin-sql-psql \
+      -plugin-sql-mysql \
       -bindir /usr/${_arch}/bin \
       -datadir /usr/${_arch}/share/qt4 \
       -demosdir /usr/${_arch}/share/qt4/demos \
