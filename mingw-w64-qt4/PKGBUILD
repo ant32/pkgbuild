@@ -70,7 +70,7 @@ isShared() {
 }
 
 isDebug && depends=($depends "mingw-w64-qt4")
-isStatic && depends=($depends "mingw-w64-qt4")
+isStatic && depends=($depends "mingw-w64-qt4") && makedepends=($makedepends "mingw-w64-qt4-dummy")
 
 prepare() {
   cd "${srcdir}/${_pkgfqn}"
