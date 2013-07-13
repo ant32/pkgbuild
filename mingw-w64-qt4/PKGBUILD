@@ -23,8 +23,8 @@ makedepends=('mingw-w64-gcc' 'mingw-w64-libmariadbclient' 'mingw-w64-postgresql-
 optdepends=('mingw-w64-postgresql-libs: PostgreSQL driver'
             'mingw-w64-libmariadbclient: MariaDB driver')
 options=(!strip !buildflags !libtool)
-replaces=('mingw-w64-qt<=4.8.4')
-conflicts=('mingw-w64-qt')
+replaces=(${pkgname/qt4/qt}<=4.8.4)
+conflicts=(${pkgname/qt4/qt})
 _pkgfqn="qt-everywhere-opensource-src-${pkgver}"
 source=("http://download.qt-project.org/official_releases/qt/4.8/${pkgver}/${_pkgfqn}.tar.gz"
         'qmake.conf.win32'
@@ -69,8 +69,8 @@ isShared() {
   ! isStatic
 }
 
-isDebug && depends=($depends "mingw-w64-qt4")
-isStatic && depends=($depends "mingw-w64-qt4") && makedepends=($makedepends "mingw-w64-qt4-dummy")
+isDebug && depends+=('mingw-w64-qt4')
+isStatic && depends+=('mingw-w64-qt4') && makedepends+=('mingw-w64-qt4-dummy')
 
 prepare() {
   cd "${srcdir}/${_pkgfqn}"
@@ -109,8 +109,8 @@ prepare() {
   patch -Np1 -i ${srcdir}/qt-dont-set-qt-dll-define-for-static-builds.patch
 
   # Cross-compilation qmake target.
-  mkdir mkspecs/win32-g++-cross
-  mkdir mkspecs/win32-g++-cross-x64
+  mkdir -p mkspecs/win32-g++-cross
+  mkdir -p mkspecs/win32-g++-cross-x64
   install -m644 ${srcdir}/qmake.conf.win32 mkspecs/win32-g++-cross/qmake.conf
   install -m644 ${srcdir}/qmake.conf.win64 mkspecs/win32-g++-cross-x64/qmake.conf
   install -m644 ${srcdir}/qplatformdefs.h mkspecs/win32-g++-cross/
