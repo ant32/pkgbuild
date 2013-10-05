@@ -29,26 +29,26 @@ build() {
   ln -s mariadb-${_pkgver}-winx64 x86_64-w64-mingw32
 
   unset WINEARCH
-  export WINEPREFIX=${srcdir}/wineprefix
+  export WINEPREFIX="${srcdir}/wineprefix"
 
   for _arch in ${_architectures}; do
     cd "${srcdir}/mingw-utils-0.4/reimp"
     ${_arch}-gcc -g -I . reimp.c util.c ar.c -o reimp.exe
     cd "${srcdir}/${_arch}/lib"
-    wine ${srcdir}/mingw-utils-0.4/reimp/reimp.exe -d libmysql.lib
-    /usr/${_arch}/bin/dlltool -k --input-def libmysql.def --dllname libmysql.dll --output-lib libmysql.dll.a
+    wine "${srcdir}/mingw-utils-0.4/reimp/reimp.exe" -d libmysql.lib
+    ${_arch}-dlltool -k --input-def libmysql.def --dllname libmysql.dll --output-lib libmysql.dll.a
   done
 }
 
 package() {
   for _arch in ${_architectures} ; do
-cd ${srcdir}/${_arch}
-    mkdir -p ${pkgdir}/usr/${_arch}/{bin,include,lib}
-    cp -R include ${pkgdir}/usr/${_arch}
-    install -Dm644 lib/libmysql.dll ${pkgdir}/usr/${_arch}/bin/libmysql.dll
-    install -Dm644 lib/libmysql.dll.a ${pkgdir}/usr/${_arch}/lib/libmysql.dll.a
-    ${_arch}-ranlib ${pkgdir}/usr/${_arch}/lib/libmysql.dll.a
+    cd "${srcdir}/${_arch}"
+    mkdir -p "${pkgdir}/usr/${_arch}/"{bin,include,lib}
+    cp -R include "${pkgdir}/usr/${_arch}"
+    install -Dm644 lib/libmysql.dll "${pkgdir}/usr/${_arch}/bin/libmysql.dll"
+    install -Dm644 lib/libmysql.dll.a "${pkgdir}/usr/${_arch}/lib/libmysql.dll.a"
+    ${_arch}-ranlib "${pkgdir}/usr/${_arch}/lib/libmysql.dll.a"
     # calling strip on libmysql.dll does not work
-    ${_arch}-strip --strip-unneeded ${pkgdir}/usr/${_arch}/lib/*.dll.a
+    ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/"*.dll.a
   done
 }
