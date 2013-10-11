@@ -1,23 +1,23 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
 
 pkgname=mingw-w64-dbus
-pkgver=1.6.12
+pkgver=1.6.14
 pkgrel=1
 arch=('any')
 pkgdesc="MinGW Windows port of D-Bus (mingw-w64)"
-depends=('mingw-w64-crt' 'mingw-w64-glib2' 'mingw-w64-libxml2')
+depends=('mingw-w64-crt' 'mingw-w64-glib2' 'mingw-w64-expat')
 makedepends=('mingw-w64-gcc')
-options=(!strip !buildflags)
+options=(!strip !buildflags !libtool)
 license=('BSD')
 url="http://www.freedesktop.org/wiki/Software/dbus"
-source=("http://dbus.freedesktop.org/releases/dbus/dbus-${pkgver}.tar.gz")
-md5sums=('a70edc50524f258eaf5c9a9994ed8748')
+source=(http://dbus.freedesktop.org/releases/dbus/dbus-$pkgver.tar.gz)
+md5sums=('1c22aebdf952e92908800f1ec2aeb0c4')
 
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
 build()
 {
-  cd ${srcdir}/dbus-${pkgver}
+  cd "${srcdir}/dbus-${pkgver}"
 
   for _arch in ${_architectures}; do
     mkdir -p build-${_arch} && pushd build-${_arch}
@@ -32,8 +32,9 @@ build()
       --target=${_arch} \
       --build=${CHOST} \
       --prefix=/usr/${_arch} \
-      --with-xml=libxml \
+      --with-xml=expat \
       --disable-systemd
+    sed -i 's/-lrt//g' {,*/,*/*/}Makefile
     make
     popd
   done
@@ -42,14 +43,15 @@ build()
 package() {
   for _arch in ${_architectures}; do
     cd "$srcdir/dbus-${pkgver}/build-${_arch}"
-    make DESTDIR=$pkgdir install
-    ${_arch}-strip --strip-all $pkgdir/usr/${_arch}/bin/*.exe
-    ${_arch}-strip --strip-unneeded $pkgdir/usr/${_arch}/bin/*.dll
-    mv ${pkgdir}/usr/${_arch}/lib/*.dll.a ${pkgdir}/
-    ${_arch}-strip --strip-unneeded ${pkgdir}/*.dll.a
-    ${_arch}-strip --strip-debug $pkgdir/usr/${_arch}/lib/*.a
-    mv ${pkgdir}/*.dll.a ${pkgdir}/usr/${_arch}/lib/
-    rm -rf $pkgdir/usr/${_arch}/share/{doc,man}
-    rm -rf $pkgdir/usr/${_arch}/{etc/rc.d,var,libexec}
+    make DESTDIR="$pkgdir" install
+    ${_arch}-strip --strip-all "$pkgdir"/usr/${_arch}/bin/*.exe
+    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.dll
+    mv "${pkgdir}"/usr/${_arch}/lib/*.dll.a "${pkgdir}"/
+    ${_arch}-strip --strip-unneeded "${pkgdir}"/*.dll.a
+    ${_arch}-strip --strip-debug "$pkgdir"/usr/${_arch}/lib/*.a
+    mv "${pkgdir}"/*.dll.a "${pkgdir}"/usr/${_arch}/lib/
+    rm -rf "$pkgdir"/usr/${_arch}/share/{doc,man}
+    rm -rf "$pkgdir"/usr/${_arch}/{etc/rc.d,var,libexec}
+    sed -i 's/-lrt//g' "$pkgdir/usr/${_arch}/lib/pkgconfig/dbus-1.pc"
   done
 }
