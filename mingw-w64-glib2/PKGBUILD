@@ -8,7 +8,7 @@ pkgdesc="Common C routines used by GTK+ 2.4 and other libs (mingw-w64)"
 depends=(mingw-w64-crt mingw-w64-libiconv mingw-w64-gettext mingw-w64-zlib mingw-w64-libffi)
 makedepends=(mingw-w64-gcc python2 gettext glib2 automake)
 license=(LGPL)
-options=(!strip !buildflags)
+options=(!strip !buildflags !libtool)
 url="http://www.gtk.org/"
 source=("http://ftp.gnome.org/pub/GNOME/sources/glib/${pkgver%.*}/glib-$pkgver.tar.xz"
         "0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch"
