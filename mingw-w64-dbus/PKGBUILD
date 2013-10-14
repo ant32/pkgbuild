@@ -1,7 +1,7 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
 
 pkgname=mingw-w64-dbus
-pkgver=1.6.14
+pkgver=1.6.16
 pkgrel=1
 arch=('any')
 pkgdesc="MinGW Windows port of D-Bus (mingw-w64)"
@@ -11,7 +11,7 @@ options=(!strip !buildflags !libtool)
 license=('BSD')
 url="http://www.freedesktop.org/wiki/Software/dbus"
 source=(http://dbus.freedesktop.org/releases/dbus/dbus-$pkgver.tar.gz)
-md5sums=('1c22aebdf952e92908800f1ec2aeb0c4')
+md5sums=('1de63d9983d7785836ffae6c2181c698')
 
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
