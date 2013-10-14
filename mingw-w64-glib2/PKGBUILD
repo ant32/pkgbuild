@@ -1,7 +1,7 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
 
 pkgname=mingw-w64-glib2
-pkgver=2.37.1
+pkgver=2.37.7
 pkgrel=1
 arch=(any)
 pkgdesc="Common C routines used by GTK+ 2.4 and other libs (mingw-w64)"
@@ -13,14 +13,11 @@ url="http://www.gtk.org/"
 source=("http://ftp.gnome.org/pub/GNOME/sources/glib/${pkgver%.*}/glib-$pkgver.tar.xz"
         "0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch"
         "glib-send-log-messages-to-correct-stdout-and-stderr.patch"
-        "glib-formatstring.patch"
         "glib-prefer-constructors-over-DllMain.patch")
-md5sums=('bee51d61aa0d9b4071e997ff6c5fed5e'
+md5sums=('17a9493e3e2efebc8ab81ec8d4480bfb'
          'c08c41118f5318d10f326c7c30e1a33a'
          '7b065f9bc154bf996523974a698b24de'
-         '65bd06560a40e8d57841bbbaa6dad907'
          '46969e815f3ab19582ba33667a52048b')
-
 
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
@@ -30,7 +27,6 @@ build()
 
   patch -Np1 -i $srcdir/0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch
   patch -Np0 -i $srcdir/glib-send-log-messages-to-correct-stdout-and-stderr.patch
-  patch -Np0 -i $srcdir/glib-formatstring.patch
   patch -Np1 -i $srcdir/glib-prefer-constructors-over-DllMain.patch
 
   export CFLAGS="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4"
@@ -84,4 +80,3 @@ package() {
     rm -rf $pkgdir/usr/${_arch}/lib/gdbus-2.0
   done
 }
-
