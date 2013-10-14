@@ -16,13 +16,6 @@ md5sums=('c003d871f712d4d3895956b028a96e74')
 
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
-prepare() {
-  cd "${srcdir}/postgresql-${pkgver}"
-
-  # Use upstream patch for Windows error checking
-  #patch -p1 -i "${srcdir}/postgresql-mingw-errno-v2.patch"
-}
-
 build() {
   unset LDFLAGS
   
