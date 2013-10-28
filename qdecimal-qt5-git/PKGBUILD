@@ -1,12 +1,13 @@
-# Maintainer: Philip A Reimer <antreimer@gmail.com>
+# Maintainer: ant32 <antreimer@gmail.com>
+
 pkgname=qdecimal-qt5-git
 pkgver=19.4782dac
-pkgrel=1
+pkgrel=2
 pkgdesc="QDecimal class for general decimal arithmetic access in Qt5"
 arch=('i686' 'x86_64')
 url="http://code.google.com/p/qdecimal"
 license=('LGPL')
-depends=('pacman')
+depends=('qt5-base')
 makedepends=('git')
 conflicts=('qdecimal-qt5')
 provides=('qdecimal-qt5')

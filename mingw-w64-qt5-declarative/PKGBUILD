@@ -1,15 +1,15 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
-# Contributor: Philip A Reimer <antreimer@gmail.com>
+# Contributor: ant32 <antreimer@gmail.com>
 
 _qt_module=qtdeclarative
 pkgname="mingw-w64-qt5-declarative"
 pkgver=5.1.1
-pkgrel=1
+pkgrel=2
 arch=('any')
 pkgdesc="Qt5 for Windows -- QtDeclarative module (mingw-w64)"
 depends=('mingw-w64-qt5-base' 'mingw-w64-qt5-jsbackend')
 makedepends=('mingw-w64-gcc')
-options=(!strip !buildflags !libtool)
+options=(!strip !buildflags staticlibs)
 replaces=("${pkgname/qt5-/qt5-qt}<=5.1.0")
 conflicts=("${pkgname/qt5-/qt5-qt}")
 license=('GPL3' 'LGPL')

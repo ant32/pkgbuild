@@ -1,20 +1,21 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
+# Update by: ant32 <antreimer@gmail.com>
 
 pkgname=mingw-w64-glib2
-pkgver=2.38.0
+pkgver=2.38.1
 pkgrel=1
 arch=(any)
 pkgdesc="Common C routines used by GTK+ 2.4 and other libs (mingw-w64)"
 depends=(mingw-w64-crt mingw-w64-libiconv mingw-w64-gettext mingw-w64-zlib mingw-w64-libffi)
 makedepends=(mingw-w64-gcc python2 gettext glib2 automake)
 license=(LGPL)
-options=(!strip !buildflags !libtool)
+options=(!strip !buildflags staticlibs)
 url="http://www.gtk.org/"
 source=("http://ftp.gnome.org/pub/GNOME/sources/glib/${pkgver%.*}/glib-$pkgver.tar.xz"
         "0001-Use-CreateFile-on-Win32-to-make-sure-g_unlink-always.patch"
         "glib-send-log-messages-to-correct-stdout-and-stderr.patch"
         "glib-prefer-constructors-over-DllMain.patch")
-md5sums=('c50d2805a76763e9b4cc4385d4ea215d'
+md5sums=('f3f6789151c1810f2fe23fe9ebb8b828'
          'c08c41118f5318d10f326c7c30e1a33a'
          '7b065f9bc154bf996523974a698b24de'
          '46969e815f3ab19582ba33667a52048b')

@@ -1,13 +1,14 @@
 # Maintainer: Filip Brcic <brcha@gna.org>
+# Update by: ant32 <antreimer@gmail.com>
 
 pkgname=mingw-w64-gettext
 pkgver=0.18.3.1
-pkgrel=1
+pkgrel=2
 arch=(any)
 pkgdesc="GNU internationalization library (mingw-w64)"
 depends=(mingw-w64-crt mingw-w64-libiconv mingw-w64-termcap)
 makedepends=(mingw-w64-gcc)
-options=(!strip !buildflags !libtool)
+options=(!strip !buildflags staticlibs)
 license=(GPL LGPL)
 url="http://www.gnu.org/software/gettext/"
 source=("http://ftp.gnu.org/pub/gnu/gettext/gettext-$pkgver.tar.gz"{,.sig})
