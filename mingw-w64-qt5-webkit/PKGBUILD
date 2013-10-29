@@ -1,0 +1,99 @@
+# Maintainer: Filip Brcic <brcha@gna.org>
+# Contributor: ant32 <antreimer@gmail.com>
+
+_qt_module=qtwebkit
+pkgname="mingw-w64-qt5-webkit"
+pkgver=5.1.1
+pkgrel=1
+arch=('any')
+pkgdesc="Qt5 for Windows -- QtWebkit module (mingw-w64)"
+depends=('mingw-w64-qt5-base' 'mingw-w64-qt5-jsbackend' 'mingw-w64-qt5-sensors'
+         'mingw-w64-qt5-location' 'mingw-w64-qt5-multimedia' 'mingw-w64-angleproject'
+         'mingw-w64-fontconfig' 'mingw-w64-libpng' 'mingw-w64-libjpeg-turbo' 'mingw-w64-libxslt'
+         'mingw-w64-zlib' 'mingw-w64-icu' 'mingw-w64-pkg-config' 'mingw-w64-sqlite' 'mingw-w64-libwebp')
+makedepends=('mingw-w64-gcc' 'python2')
+options=(!strip !buildflags staticlibs)
+license=('GPL3' 'LGPL')
+url="http://qt-project.org/"
+_pkgfqn="${_qt_module}-opensource-src-${pkgver}"
+source=("http://download.qt-project.org/official_releases/qt/5.1/${pkgver}/submodules/${_pkgfqn}.tar.xz")
+md5sums=('486fc16ad7b7d0c1488ba5482536d66c')
+
+_architectures="i686-w64-mingw32 x86_64-w64-mingw32"
+
+prepare()
+{
+  # The ICU libraries used for cross-compilation are named exactly the same as their native Linux counterpart
+  patch -p0 -i "${srcdir}/qt5-qtwebkit-use-correct-icu-libs.patch"
+
+  # By default the build system assumes that pkg-config isn't used for the win32 target
+  # However, we're using it in the Fedora MinGW toolchain so make sure it is used automatically
+  patch -p0 -i "${srcdir}/qt5-qtwebkit-enable-pkgconfig-support-for-win32-target.patch"
+
+  # Make sure the bundled copy of the ANGLE library isn't used
+  patch -p0 -i "${srcdir}/qtwebkit-dont-use-bundled-angle-libraries.patch"
+
+  # qtwebkit depends on qtbase with ICU support.
+  # As ICU support in qtbase also introduces over 20MB of additional dependency
+  # bloat (and the qtbase libraries itself are only 13MB) the decision was made
+  # to build qtbase without ICU support.
+  # Make sure qtwebkit doesn't depend on a qtbase with ICU support any more
+  patch -p0 -i "${srcdir}/qt5-qtwebkit-dont-depend-on-icu.patch"
+
+  # WebKit svn commit 136242 implemented a split into QtWebKit and QtWebKitWidgets
+  # Due to this change a static library named WebKit1.a is created first.
+  # After this a shared library is created named Qt5WebKit.dll which contains
+  # the contents of this static library and some other object files.
+  # However, various symbols in the static library are expected to be exported
+  # in the Qt5WebKit.dll shared library. As static libraries normally don't care
+  # about exported symbols (everything is exported after all) the decoration
+  # attribute Q_DECL_EXPORT won't be set.
+  # This results in undefined references when trying to link the QtWebKitWidgets
+  # shared library (which depends on various symbols which aren't exported properly
+  # in the Qt5WebKit.dll shared library)
+  patch -p0 -i "${srcdir}/qt5-qtwebkit-workaround-build-breakage-after-svn-commit-136242.patch"
+
+  # Fix compilation against latest ANGLE
+  # https://bugs.webkit.org/show_bug.cgi?id=109127
+  patch -p0 -i "${srcdir}/webkit-commit-142567.patch"
+
+  # Fix detection of native tools which started to fail as of QtWebkit 5.1.0
+  # Caused by upstream commit 150223, so revert it for now
+  patch -p0 -i "${srcdir}/changeset_150223.diff"
+
+  # smaller debuginfo s/-g/-g1/ (debian uses -gstabs) to avoid 4gb size limit
+  patch -p0 -i "${srcdir}/qtwebkit-opensource-src-5.0.1-debuginfo.patch"
+}
+
+build()
+{
+  cd "${srcdir}/${_pkgfqn}"
+
+  for _arch in ${_architectures}; do
+    mkdir -p build-${_arch} && pushd build-${_arch}
+
+    ${_arch}-qmake-qt5 ../${_qt_module}.pro
+
+    make
+
+    popd
+  done
+}
+
+package() {
+  cd "${srcdir}/${_pkgfqn}"
+
+  for _arch in ${_architectures}; do
+    pushd build-${_arch}
+
+    make INSTALL_ROOT="$pkgdir" install
+
+
+
+    popd
+  done
+
+  # .prl files aren't interesting for us
+  find "${pkgdir}" -name "*.prl" -delete
+
+}
