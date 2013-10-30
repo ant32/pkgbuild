@@ -12,7 +12,7 @@ depends=('mingw-w64-qt5-base' 'mingw-w64-qt5-jsbackend' 'mingw-w64-qt5-sensors'
          'mingw-w64-fontconfig' 'mingw-w64-libpng' 'mingw-w64-libjpeg-turbo' 'mingw-w64-libxslt'
          'mingw-w64-zlib' 'mingw-w64-icu' 'mingw-w64-pkg-config' 'mingw-w64-sqlite' 'mingw-w64-libwebp')
 makedepends=('mingw-w64-gcc' 'python2')
-options=(!strip !buildflags staticlibs)
+options=('!strip' '!buildflags' 'staticlibs')
 license=('GPL3' 'LGPL')
 url="http://qt-project.org/"
 _pkgfqn="${_qt_module}-opensource-src-${pkgver}"
