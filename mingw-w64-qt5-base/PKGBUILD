@@ -3,7 +3,7 @@
 
 pkgname=mingw-w64-qt5-base
 pkgver=5.2.0
-pkgrel=2
+pkgrel=3
 pkgdesc='A cross-platform application and UI framework (mingw-w64)'
 arch=('i686' 'x86_64')
 url="http://qt-project.org/"
@@ -72,11 +72,10 @@ isOpenGL() {
   [ $pkgname = "mingw-w64-qt5-base-opengl" ]
 }
 
-
 isStatic && depends+=("mingw-w64-qt5-base")
-[ ! isOpenGL ] && depends+=("mingw-w64-angleproject")
-[ isOpenGL ] && provides+=("mingw-w64-qt5-base")
-[ isOpenGL ] && conflicts+=("mingw-w64-qt5-base")
+! isOpenGL && depends+=("mingw-w64-angleproject")
+isOpenGL && provides+=("mingw-w64-qt5-base")
+isOpenGL && conflicts+=("mingw-w64-qt5-base")
 
 prepare() {
   cd "${srcdir}/${_pkgfqn}"
