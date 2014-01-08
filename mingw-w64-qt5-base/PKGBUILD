@@ -4,7 +4,7 @@
 
 pkgname=mingw-w64-qt5-base
 pkgver=5.2.0
-pkgrel=5
+pkgrel=6
 pkgdesc='A cross-platform application and UI framework (mingw-w64)'
 arch=('i686' 'x86_64')
 url="http://qt-project.org/"
@@ -161,7 +161,7 @@ prepare() {
   # due to the other host-libs patches.
   patch -p1 -i "${srcdir}/qt5-use-system-zlib-in-host-libs.patch"
 
-  if ! isOpenGL && ! isInternalAngle; then
+  if ! isInternalAngle; then
     # Make sure the Qt5 build system uses our external ANGLE library
     rm -rf src/3rdparty/angle include/QtANGLE/{EGL,GLES2,KHR}
   fi
@@ -220,21 +220,22 @@ build() {
       -nomake examples \
       -make tools \
       -hostprefix /usr/${_arch} \
-      -hostdatadir /usr/${_arch}/share/qt5 \
+      -hostdatadir /usr/${_arch}/lib/qt \
+      -hostbindir /usr/${_arch}/lib/qt/bin \
       -prefix /usr/${_arch} \
-      -bindir /usr/${_arch}/bin/qt5 \
-      -archdatadir /usr/${_arch}/share/qt5 \
-      -datadir /usr/${_arch}/share/qt5 \
-      -docdir /usr/${_arch}/share/doc/qt5 \
-      -examplesdir /usr/${_arch}/share/qt5/examples \
-      -headerdir /usr/${_arch}/include/qt5 \
+      -bindir /usr/${_arch}/bin \
+      -archdatadir /usr/${_arch}/lib/qt \
+      -datadir /usr/${_arch}/share/qt \
+      -docdir /usr/${_arch}/share/doc/qt \
+      -examplesdir /usr/${_arch}/share/qt/examples \
+      -headerdir /usr/${_arch}/include/qt \
       -libdir /usr/${_arch}/lib \
-      -plugindir /usr/${_arch}/lib/qt5/plugins \
+      -plugindir /usr/${_arch}/lib/qt/plugins \
       -sysconfdir /usr/${_arch}/etc \
-      -translationdir /usr/${_arch}/share/qt5/translations \
+      -translationdir /usr/${_arch}/share/qt/translations \
       -device-option CROSS_COMPILE=${_arch}-"
 
-    [ isOpenGL ] && qt_configure_args+=' -opengl desktop'
+    isOpenGL && qt_configure_args+=' -opengl desktop'
 
     unset PKG_CONFIG_PATH
 
@@ -287,14 +288,14 @@ package() {
       rm -f "${pkgdir}/usr/${_arch}/lib/libQt5Bootstrap"*
 
       # we want to keep a couple pri files not found in base
-      mv "${pkgdir}/usr/${_arch}/share/qt5/mkspecs/modules/qt_plugin_"*.pri "${pkgdir}/usr/${_arch}"
+      mv "${pkgdir}/usr/${_arch}/lib/qt/mkspecs/modules/qt_plugin_"*.pri "${pkgdir}/usr/${_arch}"
 
       # Delete duplicate files that are in the base package
       rm -fR "${pkgdir}/usr/${_arch}/"{bin,include,share,lib/pkgconfig,lib/cmake}
 
       # move pri files back
-      mkdir -p "${pkgdir}/usr/${_arch}/share/qt5/mkspecs/modules"
-      mv "${pkgdir}/usr/${_arch}/"*.pri "${pkgdir}/usr/${_arch}/share/qt5/mkspecs/modules"
+      mkdir -p "${pkgdir}/usr/${_arch}/lib/qt/mkspecs/modules"
+      mv "${pkgdir}/usr/${_arch}/"*.pri "${pkgdir}/usr/${_arch}/lib/qt/mkspecs/modules"
     else # not static => shared release
 
       # The mingw gcc compiler assumes that /usr/i686-w64-mingw32/lib and
@@ -303,7 +304,7 @@ package() {
       # introduces unwanted side effects (related to building mingw-qt5-qttools)
       # remove the reference to it
       # THIS DOES NOT CORRECTLY WORK SINCE FEDORA HAS BOTH /usr/$arch/lib AND /usr/$arch/sys-root/mingw/lib
-      sed -i s@"\"/usr/${_arch}/lib\" "@@g "${pkgdir}/usr/${_arch}/share/qt5/mkspecs/qconfig.pri"
+      sed -i s@"\"/usr/${_arch}/lib\" "@@g "${pkgdir}/usr/${_arch}/lib/qt/mkspecs/qconfig.pri"
 
       # Rename qtmain.a to a non-conflicting file name
       # The updated filename is already set correctly in the bundled mkspecs profiles
@@ -322,31 +323,30 @@ package() {
       # Add qtchooser support
       [ "${_arch}" =  "i686-w64-mingw32" ] && mingwn='mingw32' || mingwn='mingw64'
       mkdir -p "${pkgdir}/etc/xdg/qtchooser"
-      echo "${pkgdir}/${_arch}/bin/qt5" >  "${pkgdir}/etc/xdg/qtchooser/$mingwn-qt5.conf"
-      echo "${_arch}" >> "${pkgdir}/etc/xdg/qtchooser/$mingwn-qt5.conf"
+      echo "/usr/${_arch}/lib/qt/bin" >  "${pkgdir}/etc/xdg/qtchooser/$mingwn-qt5.conf"
+      echo "/usr/${_arch}/lib" >> "${pkgdir}/etc/xdg/qtchooser/$mingwn-qt5.conf"
 
       # Manually install qmake and other native tools so we don't depend anymore on
       # the version of the native system Qt and also fix issues as illustrated at
       # http://stackoverflow.com/questions/6592931/building-for-windows-under-linux-using-qt-creator
       # Also make sure the tools can be found by CMake
       mkdir -p "${pkgdir}/usr/bin"
-      mkdir -p "${pkgdir}/usr/${_arch}/bin"
       for tool in qmake moc rcc uic qdbuscpp2xml qdbusxml2cpp qdoc syncqt.pl; do
-        ln -s ../${_arch}/bin/qt5/${tool} "${pkgdir}/usr/bin/${_arch}-${tool}-qt5"
+        ln -s ../${_arch}/lib/qt/bin/${tool} "${pkgdir}/usr/bin/${_arch}-${tool}-qt5"
       done
     fi
 
     # Remove prl files
-    rm -f "${pkgdir}/usr/${_arch}/lib"{,/qt5/plugins/*}/*.prl
+    rm -f "${pkgdir}/usr/${_arch}/lib"{,/qt/plugins/*}/*.prl
 
     # And finaly, strip the binaries
     if isStatic; then
       ${_arch}-strip --strip-debug "${pkgdir}/usr/${_arch}/lib/"*.a # static libs
     else
       ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/libqt5main"*.a
-      ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/bin/qt5/"*.dll
+      ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/bin/"*.dll
       ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/"*.dll.a # dynamic lib interfaces
-      ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/qt5/plugins/"*/*.dll
+      ${_arch}-strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/qt/plugins/"*/*.dll
       strip --strip-unneeded "${pkgdir}/usr/${_arch}/lib/libQt5Bootstrap.so.${pkgver}"
     fi
   done
