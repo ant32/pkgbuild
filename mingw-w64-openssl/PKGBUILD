@@ -3,7 +3,7 @@
 
 pkgname=mingw-w64-openssl
 _ver=1.0.1f
-pkgver=${_ver/[a-z]/.${_ver//[0-9.]/}}
+pkgver=1.0.1.f
 pkgrel=1
 pkgdesc="The Open Source toolkit for Secure Sockets Layer and Transport Layer Security (mingw-w64)"
 arch=('any')
