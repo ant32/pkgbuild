@@ -2,7 +2,7 @@
 # Contributor: napa3um <napa3um@gmail.com>
 # Contributor: Filip Brcic <brcha@gna.org>
 
-pkgname=mingw-w64-sqlite
+pkgname=mingw-w64-sqlite3
 _amalgamationver=3080300
 pkgver=3.8.3
 pkgrel=1
