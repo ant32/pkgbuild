@@ -1,8 +1,8 @@
 # Maintainer: ant32 <antreimer@gmail.com>
 
 pkgname=quasar-client
-pkgver=2.2.0
-pkgrel=2
+pkgver=2.2.1
+pkgrel=1
 pkgdesc="Business accounting software"
 url="http://www.linuxcanada.com"
 arch=('x86_64' 'i686')
@@ -12,13 +12,20 @@ optdepends=('polymer: KDE QT style Plastik')
 [ ${arch} == 'i686' ] && _arch='i386' || _arch='amd64'
 source=("ftp://linuxcanada.com/pub/Quasar/${pkgver}/binaries/${_arch}/Kubuntu/12.04/${pkgname}_${pkgver}-1_${_arch}.deb"
         'Quasar.desktop')
-md5sums=('0734e99fc31dda3547d4d9f26b4d1f40'
-         '5f4ced3487aa7c1d15f4277dc4323ea5')
+sha256sums=('342564204c8614327a5274596420dcfa3eb4cf4795b82ab3a8dc125a641800d8'
+            '9c4a47b7948b7a59f90f3276bed820cc895fa0e092f64057522a8f32d670c43a')
+
+prepare() {
+  sed -e "s|/opt/quasar/|/opt/quasar-$pkgver/|g" -i "${srcdir}/Quasar.desktop"
+  sed -e "s|Name=Quasar Accounting|Name=Quasar Accounting $pkgver|g" -i "${srcdir}/Quasar.desktop"
+}
 
 package() {
   cd "${srcdir}"
   tar zxf data.tar.gz
-  cp -al opt "$pkgdir"
-  install -Dm644 Quasar.desktop "$pkgdir/usr/share/applications/Quasar.desktop"
-  install -Dm644 usr/share/doc/quasar-client/copyright "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+  cp -al opt "${pkgdir}"
+  # allow multiple versions of quasar
+  mv "${pkgdir}/opt/quasar" "${pkgdir}/opt/quasar-$pkgver"
+  install -Dm644 Quasar.desktop "${pkgdir}/usr/share/applications/Quasar-$pkgver.desktop"
+  install -Dm644 usr/share/doc/quasar-client/copyright "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
 }
