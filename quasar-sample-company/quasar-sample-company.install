@@ -1,0 +1,34 @@
+
+
+post_install() {
+  echo $1
+  # Try to create using PostgreSQL
+  /opt/quasar/bin/quasar_import -create -company "Sample Company" -database PostgreSQL -serverPassword admin -password admin -file /opt/quasar/import/sample_company.xml >/dev/null 2>/dev/null
+
+  # If that failed, try using Firebird
+  if [ $? != 0 ]; then
+      /opt/quasar/bin/quasar_import -create -company "Sample Company" -database Firebird -serverPassword admin -password admin -file /opt/quasar/import/sample_company.xml >/dev/null 2>/dev/null
+  fi
+
+  # And finally try Sybase if its still not working
+  if [ $? != 0 ]; then
+      /opt/quasar/bin/quasar_import -create -company "Sample Company" -database Sybase -serverPassword admin -password admin -file /opt/quasar/import/sample_company.xml >/dev/null 2>/dev/null
+  fi
+
+  # Show error if still failed
+  if [ $? != 0 ]; then
+      echo "Error: failed creating sample company.  At least one database needs to be configured for this to work"
+  fi
+}
+
+post_remove() {
+  echo $1
+  # Drop sample company
+  rm -f "/opt/quasar/data/companies/Sample Company.xml"
+  rm -f /opt/quasar/databases/Sample_Company.db
+  rm -f /opt/quasar/databases/Sample_Company.log
+  rm -f /opt/quasar/databases/Sample_Company.fdb
+  if [ -x /usr/bin/dropdb ]; then
+      su - postgres -c "/usr/bin/dropdb \"Sample Company\""
+  fi
+}

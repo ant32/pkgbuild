@@ -1,0 +1,32 @@
+# Maintainer: ant32 <antreimer@gmail.com>
+
+pkgname=quasar-tools
+pkgver=2.2.1
+pkgrel=1
+pkgdesc="Business accounting software (Tools)"
+url="http://www.linuxcanada.com"
+arch=('x86_64' 'i686')
+license=('Commercial')
+depends=('tcl85' 'icu48' 'qt3')
+optdepends=('polymer: KDE QT style Plastik')
+conflicts=('quasar-single')
+[ ${arch} == 'i686' ] && _arch='i386' || _arch='amd64'
+source=("ftp://linuxcanada.com/pub/Quasar/${pkgver}/binaries/${_arch}/Kubuntu/12.04/${pkgname}_${pkgver}-1_${_arch}.deb"
+        'QuasarAdmin.desktop')
+sha256sums=('66cb0db8f3eae47af949b8e238bbdeec56bf2d2aa3705d94fe3a1ff9db5b0e4f'
+            '6140fb7546ec574d2542d2b398cfc149cf297dba4f547f055e7e1b6cec8f2918')
+
+prepare() {
+  sed -e "s|/opt/quasar/|/opt/quasar-$pkgver/|g" -i "${srcdir}/QuasarAdmin.desktop"
+  sed -e "s|Name=Quasar Admin|Name=Quasar Admin $pkgver|g" -i "${srcdir}/QuasarAdmin.desktop"
+}
+            
+package() {
+  cd "${srcdir}"
+  tar zxf data.tar.gz
+  cp -al opt "${pkgdir}"
+  # allow multiple versions of quasar
+  mv "${pkgdir}/opt/quasar" "${pkgdir}/opt/quasar-$pkgver"
+  install -Dm644 QuasarAdmin.desktop "${pkgdir}/usr/share/applications/QuasarAdmin-$pkgver.desktop"
+  install -Dm644 usr/share/doc/${pkgname}/copyright "${pkgdir}/usr/share/licenses/${pkgname}/COPYING"
+}
