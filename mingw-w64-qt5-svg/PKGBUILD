@@ -17,8 +17,7 @@ sha256sums=('788f69557ff6d28073d6ef2b3300b42b987fba1d122f7884ba0269023cab44ef')
 
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
-build()
-{
+build() {
   cd "${srcdir}/${_pkgfqn}"
 
   for _arch in ${_architectures}; do
