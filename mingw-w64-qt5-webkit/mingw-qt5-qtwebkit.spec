@@ -2,7 +2,7 @@
 
 %global qt_module qtwebkit
 
-#%%global pre beta1
+#%%global pre rc1
 
 #%%global snapshot_date 20121130
 #%%global snapshot_rev 3c213ae3
@@ -17,7 +17,7 @@
 %global release_version %(echo %{version} | awk -F. '{print $1"."$2}')
 
 Name:           mingw-qt5-%{qt_module}
-Version:        5.1.1
+Version:        5.2.1
 Release:        1%{?pre:.%{pre}}%{?snapshot_date:.git%{snapshot_date}.%{snapshot_rev}}%{?dist}
 Summary:        Qt5 for Windows - QtWebKit component
 
@@ -30,7 +30,11 @@ URL:            http://qt-project.org/
 # wget http://qt.gitorious.org/qtwebkit/qt5-module/archive-tarball/%{snapshot_rev} -O qt5-qtwebkit-%{snapshot_rev}.tar.gz
 Source0:        qt5-%{qt_module}-%{snapshot_rev}.tar.gz
 %else
-Source0:        http://download.qt-project.org/official_releases/qt/%{release_version}/%{version}/submodules/%{qt_module}-opensource-src-%{version}%{?pre:-%{pre}}.tar.xz
+%if "%{?pre}" != ""
+Source0:        http://download.qt-project.org/development_releases/qt/%{release_version}/%{version}-%{pre}/submodules/%{qt_module}-opensource-src-%{version}-%{pre}.tar.xz
+%else
+Source0:        http://download.qt-project.org/official_releases/qt/%{release_version}/%{version}/submodules/%{qt_module}-opensource-src-%{version}.tar.xz
+%endif
 %endif
 
 BuildArch:      noarch
@@ -96,6 +100,10 @@ Patch3:         qtwebkit-dont-use-bundled-angle-libraries.patch
 # Make sure qtwebkit doesn't depend on a qtbase with ICU support any more
 Patch4:         qt5-qtwebkit-dont-depend-on-icu.patch
 
+# Undo the removal of the old Qt4 based unicode support
+# as we want to use it instead of the bloated ICU
+Patch5:         revert-qt4-unicode-removal.patch
+
 # WebKit svn commit 136242 implemented a split into QtWebKit and QtWebKitWidgets
 # Due to this change a static library named WebKit1.a is created first.
 # After this a shared library is created named Qt5WebKit.dll which contains
@@ -109,16 +117,16 @@ Patch4:         qt5-qtwebkit-dont-depend-on-icu.patch
 # in the Qt5WebKit.dll shared library)
 Patch6:         qt5-qtwebkit-workaround-build-breakage-after-svn-commit-136242.patch
 
-# Fix compilation against latest ANGLE
-# https://bugs.webkit.org/show_bug.cgi?id=109127
-Patch8:         webkit-commit-142567.patch
-
 # Fix detection of native tools which started to fail as of QtWebkit 5.1.0
 # Caused by upstream commit 150223, so revert it for now
 Patch9:         changeset_150223.diff
 
 # smaller debuginfo s/-g/-g1/ (debian uses -gstabs) to avoid 4gb size limit
 Patch10:        qtwebkit-opensource-src-5.0.1-debuginfo.patch 
+
+# Revert commit 151422 to fix a build failure which happens because we're not using ICU
+Patch11:        webkit-commit-151422.patch
+
 
 
 %description
@@ -162,10 +170,11 @@ Fedora Windows cross-compiler.
 %patch2 -p0 -b .pkgconfig
 %patch3 -p1 -b .angle
 %patch4 -p1 -b .no_icu
+%patch5 -p1 -b .qt4_unicode -R
 %patch6 -p0 -b .export
-%patch8 -p1 -b .angle_size_t
 %patch9 -p1 -b .tools -R
 %patch10 -p1 -b .debuginfo
+%patch11 -p1 -b .no_icu -R
 
 # Make sure the bundled copy of the ANGLE libraries isn't used
 rm -rf Source/ThirdParty/ANGLE
@@ -187,12 +196,6 @@ unset PKG_CONFIG_PATH
 # .prl files aren't interesting for us
 find $RPM_BUILD_ROOT -name "*.prl" -delete
 
-# Rename the .a files to .dll.a as they're actually import libraries and not static libraries
-for FN in $RPM_BUILD_ROOT%{mingw32_libdir}/*.a $RPM_BUILD_ROOT%{mingw64_libdir}/*.a ; do
-    FN_NEW=$(echo $FN | sed s/'.a$'/'.dll.a'/)
-    mv $FN $FN_NEW
-done
-
 # The .dll's are installed in both %%{mingw32_bindir} and %%{mingw32_libdir}
 # One copy of the .dll's is sufficient
 rm -f $RPM_BUILD_ROOT%{mingw32_libdir}/*.dll
@@ -206,7 +209,7 @@ mv $RPM_BUILD_ROOT%{mingw64_datadir}/qt5/bin/QtWebProcess.exe $RPM_BUILD_ROOT%{m
 # Win32
 %files -n mingw32-qt5-%{qt_module}
 %doc Source/WebCore/LICENSE*
-%doc ChangeLog VERSION
+%doc VERSION
 %{mingw32_bindir}/QtWebProcess.exe
 %{mingw32_bindir}/Qt5WebKit.dll
 %{mingw32_bindir}/Qt5WebKitWidgets.dll
@@ -220,12 +223,14 @@ mv $RPM_BUILD_ROOT%{mingw64_datadir}/qt5/bin/QtWebProcess.exe $RPM_BUILD_ROOT%{m
 %{mingw32_libdir}/pkgconfig/Qt5WebKitWidgets.pc
 %{mingw32_datadir}/qt5/qml/QtWebKit/
 %{mingw32_datadir}/qt5/mkspecs/modules/qt_lib_webkit.pri
+%{mingw32_datadir}/qt5/mkspecs/modules/qt_lib_webkit_private.pri
 %{mingw32_datadir}/qt5/mkspecs/modules/qt_lib_webkitwidgets.pri
+%{mingw32_datadir}/qt5/mkspecs/modules/qt_lib_webkitwidgets_private.pri
 
 # Win64
 %files -n mingw64-qt5-%{qt_module}
 %doc Source/WebCore/LICENSE*
-%doc ChangeLog VERSION
+%doc VERSION
 %{mingw64_bindir}/QtWebProcess.exe
 %{mingw64_bindir}/Qt5WebKit.dll
 %{mingw64_bindir}/Qt5WebKitWidgets.dll
@@ -239,10 +244,22 @@ mv $RPM_BUILD_ROOT%{mingw64_datadir}/qt5/bin/QtWebProcess.exe $RPM_BUILD_ROOT%{m
 %{mingw64_libdir}/pkgconfig/Qt5WebKitWidgets.pc
 %{mingw64_datadir}/qt5/qml/QtWebKit
 %{mingw64_datadir}/qt5/mkspecs/modules/qt_lib_webkit.pri
+%{mingw64_datadir}/qt5/mkspecs/modules/qt_lib_webkit_private.pri
 %{mingw64_datadir}/qt5/mkspecs/modules/qt_lib_webkitwidgets.pri
+%{mingw64_datadir}/qt5/mkspecs/modules/qt_lib_webkitwidgets_private.pri
 
 
 %changelog
+* Sat Feb  8 2014 Erik van Pienbroek <epienbro@fedoraproject.org> - 5.2.1-1
+- Update to 5.2.1
+
+* Sun Jan  5 2014 Erik van Pienbroek <epienbro@fedoraproject.org> - 5.2.0-1
+- Update to 5.2.0
+- Dropped manual rename of import libraries
+
+* Fri Nov 29 2013 Erik van Pienbroek <epienbro@fedoraproject.org> - 5.2.0-0.1.rc1
+- Update to 5.2.0 RC1
+
 * Sun Sep 22 2013 Erik van Pienbroek <epienbro@fedoraproject.org> - 5.1.1-1
 - Update to 5.1.1
 - Added license files

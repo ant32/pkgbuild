@@ -10,22 +10,25 @@
 +#    !mac:!contains(QT_CONFIG,icu) {
 +#        addReasonForSkippingBuild("ICU is required. To build QtWebKit with Qt 5 you need to build Qt 5 with libICU support. Check for ICU support being mentioned in qtbase/config.summary.")
 +#    }
-     production_build:blackberry {
-         addReasonForSkippingBuild("Build not supported on BB10 yet.")
+     production_build:blackberry|qnx {
+         addReasonForSkippingBuild("Build not supported on BB10/QNX yet.")
      }
 --- qtwebkit-opensource-src-5.0.0/Source/WTF/wtf/Platform.h.orig	2013-01-04 19:28:53.735934784 +0100
 +++ qtwebkit-opensource-src-5.0.0/Source/WTF/wtf/Platform.h	2013-01-04 19:28:13.856641177 +0100
-@@ -533,7 +533,9 @@
+@@ -545,9 +545,13 @@
  
  #endif  /* OS(WINCE) && !PLATFORM(QT) */
  
--#if OS(WINCE) && !PLATFORM(QT)
 +#if OS(WINDOWS) && PLATFORM(QT)
 +#define WTF_USE_QT4_UNICODE 1
-+#elif OS(WINCE) && !PLATFORM(QT)
- #define WTF_USE_WCHAR_UNICODE 1
- #elif PLATFORM(GTK)
- /* The GTK+ Unicode backend is configurable */
++#else
+ #if !USE(WCHAR_UNICODE)
+ #define WTF_USE_ICU_UNICODE 1
+ #endif
++#endif
+ 
+ #if PLATFORM(MAC) && !PLATFORM(IOS)
+ #if CPU(X86_64)
 --- qtwebkit-opensource-src-5.0.0/Source/WebCore/platform/text/TextAllInOne.cpp.orig	2013-01-04 21:55:38.574265749 +0100
 +++ qtwebkit-opensource-src-5.0.0/Source/WebCore/platform/text/TextAllInOne.cpp	2013-01-04 20:51:54.156245445 +0100
 @@ -27,7 +27,11 @@
@@ -229,3 +232,25 @@
 +    }
 +
 +}
+--- a/Source/WebCore/platform/ThreadGlobalData.cpp
++++ b/Source/WebCore/platform/ThreadGlobalData.cpp
+@@ -37,6 +37,8 @@
+ 
+ #if USE(ICU_UNICODE)
+ #include "TextCodecICU.h"
++#elif USE(QT4_UNICODE)
++#include "qt/TextCodecQt.h"
+ #endif
+ 
+ #if PLATFORM(MAC)
+--- qtwebkit-opensource-src-5.2.0-rc1/Source/WebCore/platform/text/TextBreakIteratorQt.cpp.orig	2013-12-04 00:08:41.281004481 +0100
++++ qtwebkit-opensource-src-5.2.0-rc1/Source/WebCore/platform/text/TextBreakIteratorQt.cpp	2013-12-04 00:07:52.878531508 +0100
+@@ -96,7 +96,7 @@
+ 
+     static TextBreakIterator* staticLineBreakIterator;
+ 
+-    TextBreakIterator* acquireLineBreakIterator(const UChar* string, int length, const AtomicString&)
++    TextBreakIterator* acquireLineBreakIterator(const UChar* string, int length, const AtomicString&, const UChar* priorContext, unsigned priorContextLength)
+     {
+         TextBreakIterator* lineBreakIterator = 0;
+         if (staticLineBreakIterator) {

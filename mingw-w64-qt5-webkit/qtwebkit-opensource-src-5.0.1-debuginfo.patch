@@ -30,14 +30,14 @@ diff -up qtwebkit-opensource-src-5.0.1/Source/WebCore/WebCore.pri.debuginfo qtwe
  QT *= network sql core-private gui-private
  
  WEBCORE_GENERATED_SOURCES_DIR = $${ROOT_BUILD_DIR}/Source/WebCore/$${GENERATED_SOURCES_DESTDIR}
-@@ -292,6 +298,7 @@
+@@ -302,6 +308,7 @@
  unix:!mac:*-g++*:QMAKE_CXXFLAGS += -fdata-sections
  unix:!mac:*-g++*:QMAKE_LFLAGS += -Wl,--gc-sections
  linux*-g++*:QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
 +win32:!equals(QT_ARCH, powerpc):!equals(QT_ARCH, s390):!equals(QT_ARCH, mips):!equals(QT_ARCH, arm):QMAKE_LFLAGS += -Wl,--no-keep-memory -Wl,--reduce-memory-overheads
  
- contains(DEFINES, ENABLE_OPENCL=1) {
-     LIBS += -lOpenCL
+ enable_fast_mobile_scrolling: DEFINES += ENABLE_FAST_MOBILE_SCROLLING=1
+ 
 diff -up qtwebkit-opensource-src-5.0.1/Source/WebKit2/WebKit2.pri.debuginfo qtwebkit-opensource-src-5.0.1/Source/WebKit2/WebKit2.pri
 --- qtwebkit-opensource-src-5.0.1/Source/WebKit2/WebKit2.pri.debuginfo	2013-01-29 13:03:39.000000000 -0600
 +++ qtwebkit-opensource-src-5.0.1/Source/WebKit2/WebKit2.pri	2013-02-23 13:54:22.579460033 -0600
